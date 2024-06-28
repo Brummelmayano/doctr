@@ -179,3 +179,44 @@ def export_model_to_onnx(
 
     logging.info(f"Model exported to {model_name}.zip")
     return f"{model_name}.onnx", output
+
+
+
+def export_model_to_tflite(model: Model, model_name: str, dummy_input: List[tf.TensorSpec], **kwargs: Any) -> str:
+    """Exporter le modèle au format TFLite.
+
+    >>> import tensorflow as tf
+    >>> from doctr.models.classification import resnet18
+    >>> model = resnet18(pretrained=True, include_top=True)
+    >>> export_model_to_tflite(model, "my_model",
+    >>> dummy_input=[tf.TensorSpec([None, 32, 32, 3], tf.float32, name="input")])
+
+    Args:
+    ----
+        model: le modèle Keras à exporter
+        model_name: le nom pour le modèle exporté
+        dummy_input: l'entrée fictive du modèle
+        kwargs: arguments supplémentaires à passer au convertisseur TFLite
+
+    Returns:
+    -------
+        le chemin vers le modèle exporté
+    """
+    # Création d'un convertisseur TFLite
+    converter = tf.lite.TFLiteConverter.from_keras_model(model)
+    
+    # Application des optimisations si spécifiées
+    optimizations = kwargs.get("optimizations", None)
+    if optimizations:
+        converter.optimizations = optimizations
+
+    # Conversion du modèle
+    tflite_model = converter.convert()
+
+    # Sauvegarde du modèle TFLite
+    tflite_model_path = f"{model_name}.tflite"
+    with open(tflite_model_path, "wb") as f:
+        f.write(tflite_model)
+
+    logging.info(f"Modèle exporté à {tflite_model_path}")
+    return tflite_model_path
